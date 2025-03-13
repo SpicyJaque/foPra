@@ -1,0 +1,135 @@
+---
+title: "wahlprogramme"
+output: html_notebook
+---
+
+```{r}
+packages <- c("dplyr", "magrittr", "quanteda", "stm", "manifestoR")
+
+# install if necessary
+install.packages(setdiff(packages, rownames(installed.packages())))  
+
+
+# load
+lapply(packages, library, character.only = TRUE)
+
+```
+
+```{r}
+mp_setapikey("C:/Users/Jacob/OneDrive/uni/MA WiSoz/Semester III/Computational Social Sciences/foPra/API Keys/RManifesto.txt")
+
+```
+
+```{r}
+my_corpus <- mp_corpus(countryname == "Germany" & edate > as.Date("2000-01-01"))
+
+```
+
+```{r}
+cdu <- 41521
+fdp <- 41420
+spd <- 41320
+greens1 <- 41111
+greens2 <- 41112
+greens3 <- 41113
+pds <- 41221
+pds_left <- 41222
+left <- 41223
+afd <- 41953
+```
+
+
+```{r}
+parties <- c(cdu, fdp, spd, greens1, greens2, greens3, pds, pds_left, left, afd)
+```
+
+
+
+```{r}
+germany_manifestos <- setNames(lapply(parties, function(p) mp_corpus(party == p)), parties)
+
+```
+
+```{r}
+germany_manifestos_df <- setNames(lapply(parties, function(p) mp_corpus_df(party == p)), parties)
+
+```
+
+```{r}
+germany_manifestos_df
+
+```
+
+```{r}
+# Merge the selected data frames and update "41111"
+germany_manifestos_df[["41111"]] <- do.call(rbind, germany_manifestos_df[c("41111", "41112", "41113")])
+
+germany_manifestos_df[["41221"]] <- do.call(rbind, germany_manifestos_df[c("41221", "41222", "41223")])
+
+# Remove "41112" and "41113" in one step
+germany_manifestos_df[c("41112", "41113")] <- NULL
+
+germany_manifestos_df[c("41222", "41223")] <- NULL
+
+
+```
+
+
+```{r}
+# Define new names
+new_names <- c("CDU", "FDP", "SPD", "GREENS", "LEFT", "AFD")
+
+# Assign new names to the list
+names(germany_manifestos_df) <- new_names
+
+```
+
+```{r}
+
+# Loop through each party and save as CSV
+for (p in names(germany_manifestos_df)) {
+  file_name <- paste0( "data/parties/", p, "_manifesto.csv")  # Create a filename
+  write.csv(germany_manifestos_df[[p]], file = file_name, row.names = FALSE, fileEncoding = "UTF-8")  # Save as CSV
+}
+
+```
+
+```{r}
+spd_manifesto <- read.csv("data/parties/SPD_manifesto.csv", header = T)
+```
+
+
+```{r}
+corpus <- corpus(as.character(spd_manifesto$text))
+
+# Tokenize
+toks <- tokens(corpus, remove_punct = T,
+               remove_numbers = T,
+               remove_symbols = T,
+               remove_separators = T,
+               split_hyphens = T,
+               remove_url = T,
+               include_docvars = F)
+
+toks <- tokens_remove(toks, stopwords("de"), case_insensitive = TRUE)
+
+toks <- tokens_wordstem(toks)
+```
+
+
+```{r}
+newspapers_dfm <- dfm(toks)
+
+newspapers_dfm <- newspapers_dfm[!rowSums(newspapers_dfm) == 0, ] # remove empty rows
+
+nrow(newspapers_dfm)
+ncol(newspapers_dfm)
+```
+
+```{r}
+my_corpus_df <- mp_corpus(countryname == "Germany" & edate > as.Date("2000-01-01"),
+as_tibble = TRUE)
+
+
+```
+

@@ -1,0 +1,117 @@
+
+```{r}
+packages <- c(
+    "dplyr", 
+    "magrittr", 
+    "quanteda", 
+    "stm", 
+    "stringr", 
+    "lubridate", 
+    "tokenizers"
+    )
+
+# install if necessary
+install.packages(setdiff(packages, rownames(installed.packages())))  
+
+# load
+lapply(packages, library, character.only = TRUE)
+```
+
+```{r}
+manifesto_data <- read.csv("data/parties/All_Manifestos.csv", header = T)
+texts <- manifesto_data$text
+```
+
+```{r}
+
+```
+
+
+```{r}
+corpus <- corpus(as.character(texts)
+                 )
+
+# Tokenize
+toks <- tokens(corpus, remove_punct = T,
+               remove_numbers = T,
+               remove_symbols = T,
+               remove_separators = T,
+               split_hyphens = T,
+               remove_url = T,
+               include_docvars = F)
+
+toks <- tokens_remove(toks, stopwords("de"), case_insensitive = TRUE)
+
+toks <- tokens_wordstem(toks)
+
+```
+
+```{r}
+# Convert tokens to a list of strings
+tokens_list <- sapply(toks, function(x) paste(x, collapse = " "))
+
+# Add the tokens as a new column in the DataFrame
+manifesto_data$text <- tokens_list
+```
+
+
+```{r}
+# Loop through each party and save as CSV
+
+file_name <- "data/parties/Manifestos_tokenized.csv" # Create a filename
+write.csv(manifesto_data, file = file_name, row.names = FALSE, fileEncoding = "UTF-8")  # Save as CSV
+
+
+```
+
+
+```{r}
+manifesto_data$text <- toks
+```
+
+
+```{r}
+
+
+split_text_by_date <- function(df, split_date) {
+  new_rows <- list()
+  
+  for (i in 1:nrow(df)) {
+    row <- df[i, ]
+    if (ymd(row$date) < ymd(split_date)) {
+      sentences <- unlist(tokenize_sentences(row$text))
+      for (j in 1:length(sentences)) {
+        sentence <- sentences[j]
+        # Check if the sentence ends with a digit followed by a period
+        if (str_detect(sentence, "\\d+\\.$") && j + 1 <= length(sentences) && str_detect(sentences[j + 1], "^[A-Z]")) {
+          sentence <- paste(sentence, sentences[j + 1])
+          sentences[j + 1] <- sentence
+          next
+        }
+        # Disregard abbreviations like "bzw.", "z.B.", "u.a."
+        if (str_detect(sentence, "\\b(bzw|z\\.B|u\\.a)\\.$")) {
+          new_row <- row
+          new_row$text <- sentence
+          new_rows <- append(new_rows, list(new_row))
+          next
+        }
+        new_row <- row
+        new_row$text <- sentence
+        new_rows <- append(new_rows, list(new_row))
+      }
+    } else {
+      new_rows <- append(new_rows, list(row))
+    }
+  }
+  
+  # Convert list to data frame
+  new_df <- bind_rows(new_rows)
+  
+  # Filter out documents that do not have a space character and documents that are shorter than 6 characters
+  new_df <- new_df %>% filter(str_detect(text, " ") & nchar(text) >= 6)
+  
+  return(new_df)
+}
+
+```
+

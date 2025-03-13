@@ -1,0 +1,28 @@
+/.RData
+/.Rhistory
+/API Keys
+/bert demo.ipynb
+/bert tm.ipynb
+/bertopic_model
+/bertopic_model.pkl
+/code.code-workspace
+/config.json
+/ctfidf.safetensors
+/ctfidf_config.json
+/data
+/df_manifesto.pkl
+/foPra Workspace.code-workspace
+/literature
+/Manifesto_final.pkl
+/OpenAIdemo.ipynb
+/pdf to text.ipynb
+/probs.pkl
+/to do.docx
+/tokenization.Rmd
+/topics.json
+/topics.pkl
+/topics_over_time.pkl
+/topic_embeddings.safetensors
+/wahlprogramme.nb.html
+/wahlprogramme.Rmd
+/__pycache__

@@ -121,3 +121,48 @@ def lemmatize_sentence(sentence):
     words = word_tokenize(sentence)
     lemmatized_words = [lemmatizer.lemmatize(word, get_wordnet_pos(word)) for word in words]
     return ' '.join(lemmatized_words)
+
+
+    
+def filter_by_topic(df, topic, color_scheme):
+
+    df_filtered = df[df['topic'] == topic]
+    df_filtered['party_date_count'] = df_filtered.groupby(['party', 'date'])['date'].transform('count')
+    df_pivot = df_filtered.pivot_table(index='date', columns='party', values='party_date_count', aggfunc='first').fillna(0)
+    # df_pivot.index = pd.to_datetime(df_pivot.index).year
+
+    # Plot the data
+    plt.figure(figsize=(12, 8))
+    for party in df_pivot.columns:
+        # plt.plot(df_pivot.index, df_pivot[party], label=party)
+        # if df_pivot[party].max() > 0:
+        plt.plot(df_pivot.index, df_pivot[party], label=party, color=[c/255 for c in color_scheme[party]])
+        plt.gca().set_facecolor((0.9, 0.95, 1))  # Set background color to light grey/blue
+
+    
+    plt.xlabel('Year')
+    
+    plt.ylabel('Party Date Count')
+    plt.title('Party Date Count Over Time for Topic {}'.format(topic))
+    plt.legend()
+    plt.show()
+    return df_pivot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

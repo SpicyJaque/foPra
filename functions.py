@@ -36,10 +36,10 @@ def plot_top_topics(df, n=10):
 
 def plot_topic_n_counts(df, topic_number):
     # Filter the DataFrame to include only the specified topic
-    topic_n_counts = df[[topic_number]]
+    topic_n_counts = df.loc[[topic_number]]
     
     # Plot the results
-    topic_n_counts.plot(kind="bar", stacked=True, figsize=(12, 6))
+    topic_n_counts.plot(kind="bar", figsize=(12, 6))
     plt.show()
 
 def limit_to_cmp(df, cmp_min, cmp_max):

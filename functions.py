@@ -70,11 +70,11 @@ def get_topics(df, codes):
 
     return new_dict
 
-def split_text_by_date(df, split_date):
+def split_text_by_date(df, split_date, column):
     new_rows = []
     for index, row in df.iterrows():
         if row['date'] < split_date:
-            sentences = nltk.sent_tokenize(row['text'])
+            sentences = nltk.sent_tokenize(row[column])
             for i, sentence in enumerate(sentences):
                 # Check if the sentence ends with a digit followed by a period
                 if re.search(r'\d+\.$', sentence) and i + 1 < len(sentences) and sentences[i + 1][0].isupper():
@@ -84,17 +84,31 @@ def split_text_by_date(df, split_date):
                 # Disregard abbreviations like "bzw.", "z.B.", "u.a."
                 if re.search(r'\b(bzw|z\.B|u\.a)\.$', sentence):
                     new_row = row.copy()
-                    new_row['text'] = sentence
+                    new_row[column] = sentence
                     new_rows.append(new_row)
                     continue
                 new_row = row.copy()
-                new_row['text'] = sentence
+                new_row[column] = sentence
                 new_rows.append(new_row)
         else:
             new_rows.append(row)
     # Filter out documents that do not have a space character and documents that are shorter than 6 characters
     new_rows = [row for row in new_rows if ' ' in row['text'] and len(row['text']) >= 6]
     return pd.DataFrame(new_rows)
+
+def drop_na_after_date(df, date_column, threshold_year):
+    """
+    Drops rows with NA values in any column if the value in the specified date column is greater than the threshold year.
+
+    Parameters:
+    df (pd.DataFrame): The dataframe to process.
+    date_column (str): The name of the date column.
+    threshold_year (int): The year threshold.
+
+    Returns:
+    pd.DataFrame: The processed dataframe.
+    """
+    return df[~((df[date_column] > threshold_year) & df.isna().any(axis=1))]
 
 def merge_text_rows(df):
     i = 1

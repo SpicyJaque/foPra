@@ -70,10 +70,10 @@ def get_topics(df, codes):
 
     return new_dict
 
-def split_text_by_date(df, split_date, column):
+def split_text_by_date(df, column="text", split_date=1998):
     new_rows = []
     for index, row in df.iterrows():
-        if row['date'] < split_date:
+        if row['year'] < split_date:
             sentences = nltk.sent_tokenize(row[column])
             for i, sentence in enumerate(sentences):
                 # Check if the sentence ends with a digit followed by a period
@@ -96,19 +96,38 @@ def split_text_by_date(df, split_date, column):
     new_rows = [row for row in new_rows if ' ' in row['text'] and len(row['text']) >= 6]
     return pd.DataFrame(new_rows)
 
-def drop_na_after_date(df, date_column, threshold_year):
+def process_manifesto_data(df):
     """
-    Drops rows with NA values in any column if the value in the specified date column is greater than the threshold year.
+    Processes the manifesto dataframe by performing various operations such as counting occurrences,
+    mapping values, filtering rows, and merging text rows.
 
     Parameters:
     df (pd.DataFrame): The dataframe to process.
-    date_column (str): The name of the date column.
-    threshold_year (int): The year threshold.
 
     Returns:
     pd.DataFrame: The processed dataframe.
     """
-    return df[~((df[date_column] > threshold_year) & df.isna().any(axis=1))]
+    df = split_text_by_date(df)
+    # Count occurrences of distinct values in the party column
+    party_counts = df["party"].value_counts()
+
+    # Add a line that contains this count per party
+    df["doc size of party"] = df["party"].map(party_counts)
+    df["cmp_code"] = pd.to_numeric(df["cmp_code"], errors='coerce')
+    df.index = range(1, len(df) + 1)
+    
+    # Remove all punctuation from the 'text' column
+    df["text"] = df["text"].str.replace(r'[^\w\s]', '', regex=True)  # Delete entries that do not contain words in the text column
+    df = df[df['text'].str.contains(r'\b\w+\b', na=False)]
+
+    # Ensure the 'text' column contains only strings and handle NaN values
+    df["text"] = df["text"].astype(str).fillna("")
+
+    # Merge text rows
+    df = merge_text_rows(df)
+
+    return df
+
 
 def merge_text_rows(df):
     i = 1

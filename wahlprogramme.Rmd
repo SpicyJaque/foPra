@@ -20,10 +20,6 @@ mp_setapikey("C:/Users/Jacob/OneDrive/uni/MA WiSoz/Semester III/Computational So
 
 ```
 
-```{r}
-my_corpus <- mp_corpus(countryname == "Germany" & edate > as.Date("2000-01-01"))
-
-```
 
 ```{r}
 cdu <- 41521
@@ -44,11 +40,6 @@ parties <- c(cdu, fdp, spd, greens1, greens2, greens3, pds, pds_left, left, afd)
 ```
 
 
-
-```{r}
-germany_manifestos <- setNames(lapply(parties, function(p) mp_corpus(party == p)), parties)
-
-```
 
 ```{r}
 germany_manifestos_df <- setNames(lapply(parties, function(p) mp_corpus_df(party == p)), parties)
@@ -106,10 +97,12 @@ for (p in new_names) {
 df_manifesto$date <- as.Date(paste0(df_manifesto$date, "01"), format = "%Y%m%d")
 
 # Extract only the year from the 'date' column
-df_manifesto$year <- format(df_manifesto$date, "%Y")
+df_manifesto$date <- format(df_manifesto$date, "%Y")
+
+df_manifesto$year <- as.numeric(df_manifesto$date)
 
 # Drop the specified columns
-columns_to_drop <- c("eu_code", "pos", "language", "annotations", "translation_en", "year")
+columns_to_drop <- c("eu_code", "pos", "language", "annotations", "translation_en", "date")
 df_manifesto_final <- df_manifesto[, !(names(df_manifesto) %in% columns_to_drop)]
 
 
@@ -120,7 +113,7 @@ df_manifesto_final <- df_manifesto[, !(names(df_manifesto) %in% columns_to_drop)
 corpus <- corpus(as.character(df_manifesto_final$text))
 
 toks <- tokens(corpus, remove_punct = F,
-               remove_numbers = T,
+               remove_numbers = F,
                remove_symbols = T,
                remove_separators = F,
                split_hyphens = F,
@@ -135,14 +128,17 @@ toks <- tokens_wordstem(toks)
 tokens_list <- sapply(toks, function(x) paste(x, collapse = " "))
 
 # Add the tokens as a new column in the DataFrame
-df_manifesto_final$text_wordstem <- tokens_list
+
+df_manifesto_toks <- df_manifesto_final
+df_manifesto_toks$text <- tokens_list
 ```
 
 
 ```{r}
 
-
 write.csv(df_manifesto_final, file = "data/parties/All_Manifestos.csv", row.names = FALSE, fileEncoding = "UTF-8")  # Save as CSV
+
+write.csv(df_manifesto_toks, file = "data/parties/All_Manifestos_tokenized.csv", row.names = FALSE, fileEncoding = "UTF-8")  # Save as CSV
 
 ```
 

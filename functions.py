@@ -96,6 +96,17 @@ def split_text_by_date(df, column="text", split_date=1998):
     new_rows = [row for row in new_rows if ' ' in row['text'] and len(row['text']) >= 6]
     return pd.DataFrame(new_rows)
 
+def merge_text_rows(df):
+    i = 1
+    while i < len(df):
+        if not df.iloc[i]['text'][0].isupper():
+            df.at[i - 1, 'text'] += ' ' + df.iloc[i]['text']
+            df = df.drop(df.index[i])
+            df = df.reset_index(drop=True)
+        else:
+            i += 1
+    return df
+
 def process_manifesto_data(df):
     """
     Processes the manifesto dataframe by performing various operations such as counting occurrences,
@@ -107,38 +118,30 @@ def process_manifesto_data(df):
     Returns:
     pd.DataFrame: The processed dataframe.
     """
-    df = split_text_by_date(df)
+    new_df = split_text_by_date(df)
     # Count occurrences of distinct values in the party column
     party_counts = df["party"].value_counts()
 
     # Add a line that contains this count per party
-    df["doc size of party"] = df["party"].map(party_counts)
-    df["cmp_code"] = pd.to_numeric(df["cmp_code"], errors='coerce')
-    df.index = range(1, len(df) + 1)
+    new_df["doc size of party"] = new_df["party"].map(party_counts)
+    new_df["cmp_code"] = pd.to_numeric(new_df["cmp_code"], errors='coerce')
+    new_df.index = range(1, len(new_df) + 1)
     
     # Remove all punctuation from the 'text' column
-    df["text"] = df["text"].str.replace(r'[^\w\s]', '', regex=True)  # Delete entries that do not contain words in the text column
-    df = df[df['text'].str.contains(r'\b\w+\b', na=False)]
+    new_df["text"] = new_df["text"].str.replace(r'[^\w\s]', '', regex=True)  # Delete entries that do not contain words in the text column
+    new_df = new_df[new_df['text'].str.contains(r'\b\w+\b', na=False)]
 
     # Ensure the 'text' column contains only strings and handle NaN values
-    df["text"] = df["text"].astype(str).fillna("")
+    new_df["text"] = new_df["text"].astype(str).fillna("")
 
     # Merge text rows
-    df = merge_text_rows(df)
+    new_df = merge_text_rows(new_df)
 
-    return df
+    new_df = split_text_by_date(new_df)
+
+    return new_df
 
 
-def merge_text_rows(df):
-    i = 1
-    while i < len(df):
-        if not df.iloc[i]['text'][0].isupper():
-            df.at[i - 1, 'text'] += ' ' + df.iloc[i]['text']
-            df = df.drop(df.index[i])
-            df = df.reset_index(drop=True)
-        else:
-            i += 1
-    return df
 
 # Initialize the lemmatizer
 lemmatizer = WordNetLemmatizer()
